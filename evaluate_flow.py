@@ -274,7 +274,7 @@ def validate_things(model,
             s10_40_list = []
             s40plus_list = []
 
-        for val_id in range(len(val_dataset)):
+        for val_id in range(1):
             image1, image2, flow_gt, valid_gt = val_dataset[val_id]
             image1 = image1[None].cuda()
             image2 = image2[None].cuda()
@@ -701,6 +701,11 @@ def inference_flow(model,
         image1 = np.array(image1).astype(np.uint8)
         image2 = np.array(image2).astype(np.uint8)
 
+        # import cv2
+        # window_name = 'image'
+        # cv2.imshow(window_name, image2[:, :, ::-1])
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
         if len(image1.shape) == 2:  # gray image
             image1 = np.tile(image1[..., None], (1, 1, 3))
             image2 = np.tile(image2[..., None], (1, 1, 3))
