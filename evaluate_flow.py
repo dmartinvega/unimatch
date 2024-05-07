@@ -7,7 +7,7 @@ import torch.nn.functional as F
 
 from dataloader.flow.datasets import FlyingChairs, FlyingThings3D, MpiSintel, KITTI
 from utils import frame_utils
-from utils.flow_viz import save_vis_flow_tofile, flow_to_image
+from utils.flow_viz import save_vis_flow_to_image_file, flow_to_image
 import imageio
 
 from utils.utils import InputPadder, compute_out_of_boundary_mask
@@ -84,7 +84,7 @@ def create_sintel_submission(model,
 
             if save_vis_flow:
                 vis_flow_file = output_file.replace('.flo', '.png')
-                save_vis_flow_tofile(flow, vis_flow_file)
+                save_vis_flow_to_image_file(flow, vis_flow_file)
 
 
 @torch.no_grad()
@@ -151,7 +151,7 @@ def create_kitti_submission(model,
 
         if save_vis_flow:
             vis_flow_file = output_filename
-            save_vis_flow_tofile(flow, vis_flow_file)
+            save_vis_flow_to_image_file(flow, vis_flow_file)
         else:
             frame_utils.writeFlowKITTI(output_filename, flow)
 
@@ -382,7 +382,8 @@ def validate_sintel(model,
             s10_40_list = []
             s40plus_list = []
 
-        for val_id in range(len(val_dataset)):
+        for val_id in range(1):
+        # for val_id in range(len(val_dataset)):
             if evaluate_matched_unmatched:
                 image1, image2, flow_gt, valid, noc_valid = val_dataset[val_id]
 
@@ -392,8 +393,8 @@ def validate_sintel(model,
             else:
                 image1, image2, flow_gt, _ = val_dataset[val_id]
 
-            image1 = image1[None].cuda()
-            image2 = image2[None].cuda()
+            # image1 = image1[None].cuda()
+            # image2 = image2[None].cuda()
 
             padder = InputPadder(image1.shape, padding_factor=padding_factor)
             image1, image2 = padder.pad(image1, image2)
@@ -677,7 +678,7 @@ def inference_flow(model,
     if inference_video is not None:
         filenames, fps = extract_video(inference_video)  # list of [H, W, 3]
     else:
-        filenames = sorted(glob(inference_dir + '/*.png') + glob(inference_dir + '/*.jpg'))
+        filenames = sorted(glob(inference_dir + '/*.png') + glob(inference_dir + '/*.jpg') + glob(inference_dir + '/*.pt'))
     print('%d images found' % len(filenames))
 
     vis_flow_preds = []
@@ -690,6 +691,9 @@ def inference_flow(model,
         if inference_video is not None:
             image1 = filenames[test_id]
             image2 = filenames[test_id + 1]
+        if ".pt" in filenames[test_id] and ".pt" in filenames[test_id + 1]:
+            image1 = torch.load(filenames[test_id])
+            image2 = torch.load(filenames[test_id + 1])
         else:
             image1 = frame_utils.read_gen(filenames[test_id])
             image2 = frame_utils.read_gen(filenames[test_id + 1])
@@ -768,7 +772,11 @@ def inference_flow(model,
             vis_flow_preds.append(flow_to_image(flow))
         else:
             # save vis flow
-            save_vis_flow_tofile(flow, output_file)
+            path_flow_vectors_u_text_file = os.path.join(output_path, os.path.basename(filenames[test_id])[:-4] + '_flow_u.csv')
+            path_flow_vectors_v_text_file = os.path.join(output_path, os.path.basename(filenames[test_id])[:-4] + '_flow_v.csv')
+            np.savetxt(path_flow_vectors_u_text_file, flow[:,:,0], delimiter=',')
+            np.savetxt(path_flow_vectors_v_text_file, flow[:,:,1], delimiter=',')
+            save_vis_flow_to_image_file(flow, output_file)
 
         # also predict backward flow
         if pred_bidir_flow:
@@ -781,7 +789,7 @@ def inference_flow(model,
                 output_file = os.path.join(output_path, os.path.basename(filenames[test_id])[:-4] + '_flow_bwd.png')
 
             # save vis flow
-            save_vis_flow_tofile(flow_bwd, output_file)
+            save_vis_flow_to_image_file(flow_bwd, output_file)
 
             # forward-backward consistency check
             # occlusion is 1
