@@ -759,6 +759,22 @@ def inference_flow(model,
 
         flow = flow_pr[0].permute(1, 2, 0).cpu().numpy()  # [H, W, 2]
 
+        # TODO aquí leer flow Kelsey y en realidad gmflow aquí solo lo voy a usar para la generación de la imagen
+        # import pandas as pd
+        # flow_kelsey_u = pd.read_csv("/home/daniela/ResearchProjects/sea-ice-motion-vectors-sidex/Data/SIDEx radarsat motion estimation/experiments/hybrid_50m_HH_OSU-IT-23_40km_soft/03 motion/03.01 vectors/20210310_034117_DVWF_HH_8bit_40m_to_20210311_031157_SCWA_HH_8bit_50m_u.csv")
+        # flow_kelsey_v = pd.read_csv("/home/daniela/ResearchProjects/sea-ice-motion-vectors-sidex/Data/SIDEx radarsat motion estimation/experiments/hybrid_50m_HH_OSU-IT-23_40km_soft/03 motion/03.01 vectors/20210310_034117_DVWF_HH_8bit_40m_to_20210311_031157_SCWA_HH_8bit_50m_v.csv")
+        # array1 = flow_kelsey_u.to_numpy()
+        # array2 = flow_kelsey_v.to_numpy()
+        # flow = np.stack((array1, array2), axis=-1)
+
+        # TODO save results as csv (not desired but I have some codes that need csv format to work)
+        import pandas as pd
+        df = pd.DataFrame(flow[:, :, 0])
+        df.to_csv('u.csv', index=False, header=False)
+
+        df = pd.DataFrame(flow[:, :, 1])
+        df.to_csv('v.csv', index=False, header=False)
+
         if inference_video is not None:
             output_file = os.path.join(output_path, '%04d_flow.png' % test_id)
         else:
