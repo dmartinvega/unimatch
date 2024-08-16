@@ -1,4 +1,4 @@
-name: unimatch
+name: unimatch2
 channels:
   - pytorch
   - defaults
