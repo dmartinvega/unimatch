@@ -270,7 +270,7 @@ def main(args):
                                            corr_radius_list=args.corr_radius_list,
                                            prop_radius_list=args.prop_radius_list,
                                            num_reg_refine=args.num_reg_refine,
-                                           )
+                                           root=args.sintel_root)
             val_results.update(results_dict)
 
         if 'kitti' in args.val_dataset:
@@ -520,7 +520,7 @@ def main(args):
                                                    corr_radius_list=args.corr_radius_list,
                                                    prop_radius_list=args.prop_radius_list,
                                                    num_reg_refine=args.num_reg_refine,
-                                                   )
+                                                   root=args.sintel_root)
                     if args.local_rank == 0:
                         val_results.update(results_dict)
 

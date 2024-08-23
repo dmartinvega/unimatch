@@ -356,7 +356,7 @@ def validate_sintel(model,
                     corr_radius_list=False,
                     prop_radius_list=False,
                     num_reg_refine=1,
-                    ):
+                    root='datasets/Sintel'):
     """ Peform validation using the Sintel (train) split """
     model.eval()
     results = {}
@@ -366,7 +366,7 @@ def validate_sintel(model,
         num_runs = 100
 
     for dstype in ['clean', 'final']:
-        val_dataset = MpiSintel(split='training', dstype=dstype,
+        val_dataset = MpiSintel(split='training', root=root, dstype=dstype,
                                 load_occlusion=evaluate_matched_unmatched,
                                 )
 
