@@ -274,7 +274,7 @@ def validate_things(model,
             s10_40_list = []
             s40plus_list = []
 
-        for val_id in range(1):
+        for val_id in range(len(val_dataset)):
             image1, image2, flow_gt, valid_gt = val_dataset[val_id]
             image1 = image1[None].cuda()
             image2 = image2[None].cuda()
@@ -382,8 +382,7 @@ def validate_sintel(model,
             s10_40_list = []
             s40plus_list = []
 
-        for val_id in range(1):
-        # for val_id in range(len(val_dataset)):
+        for val_id in range(len(val_dataset)):
             if evaluate_matched_unmatched:
                 image1, image2, flow_gt, valid, noc_valid = val_dataset[val_id]
 
@@ -393,8 +392,8 @@ def validate_sintel(model,
             else:
                 image1, image2, flow_gt, _ = val_dataset[val_id]
 
-            # image1 = image1[None].cuda()
-            # image2 = image2[None].cuda()
+            image1 = image1[None].cuda()
+            image2 = image2[None].cuda()
 
             padder = InputPadder(image1.shape, padding_factor=padding_factor)
             image1, image2 = padder.pad(image1, image2)
@@ -701,11 +700,6 @@ def inference_flow(model,
         image1 = np.array(image1).astype(np.uint8)
         image2 = np.array(image2).astype(np.uint8)
 
-        # import cv2
-        # window_name = 'image'
-        # cv2.imshow(window_name, image2[:, :, ::-1])
-        # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
         if len(image1.shape) == 2:  # gray image
             image1 = np.tile(image1[..., None], (1, 1, 3))
             image2 = np.tile(image2[..., None], (1, 1, 3))
@@ -768,22 +762,6 @@ def inference_flow(model,
 
         flow = flow_pr[0].permute(1, 2, 0).cpu().numpy()  # [H, W, 2]
 
-        # TODO aquí leer flow Kelsey y en realidad gmflow aquí solo lo voy a usar para la generación de la imagen
-        # import pandas as pd
-        # flow_kelsey_u = pd.read_csv("/home/daniela/ResearchProjects/sea-ice-motion-vectors-sidex/Data/SIDEx radarsat motion estimation/experiments/hybrid_50m_HH_OSU-IT-23_40km_soft/03 motion/03.01 vectors/20210310_034117_DVWF_HH_8bit_40m_to_20210311_031157_SCWA_HH_8bit_50m_u.csv")
-        # flow_kelsey_v = pd.read_csv("/home/daniela/ResearchProjects/sea-ice-motion-vectors-sidex/Data/SIDEx radarsat motion estimation/experiments/hybrid_50m_HH_OSU-IT-23_40km_soft/03 motion/03.01 vectors/20210310_034117_DVWF_HH_8bit_40m_to_20210311_031157_SCWA_HH_8bit_50m_v.csv")
-        # array1 = flow_kelsey_u.to_numpy()
-        # array2 = flow_kelsey_v.to_numpy()
-        # flow = np.stack((array1, array2), axis=-1)
-
-        # TODO save results as csv (not desired but I have some codes that need csv format to work)
-        import pandas as pd
-        df = pd.DataFrame(flow[:, :, 0])
-        df.to_csv('u.csv', index=False, header=False)
-
-        df = pd.DataFrame(flow[:, :, 1])
-        df.to_csv('v.csv', index=False, header=False)
-
         if inference_video is not None:
             output_file = os.path.join(output_path, '%04d_flow.png' % test_id)
         else:
@@ -793,10 +771,10 @@ def inference_flow(model,
             vis_flow_preds.append(flow_to_image(flow))
         else:
             # save vis flow
-            path_flow_vectors_u_text_file = os.path.join(output_path, os.path.basename(filenames[test_id])[:-4] + '_flow_u.csv')
-            path_flow_vectors_v_text_file = os.path.join(output_path, os.path.basename(filenames[test_id])[:-4] + '_flow_v.csv')
-            np.savetxt(path_flow_vectors_u_text_file, flow[:,:,0], delimiter=',')
-            np.savetxt(path_flow_vectors_v_text_file, flow[:,:,1], delimiter=',')
+            # path_flow_vectors_u_text_file = os.path.join(output_path, os.path.basename(filenames[test_id])[:-4] + '_flow_u.csv')
+            # path_flow_vectors_v_text_file = os.path.join(output_path, os.path.basename(filenames[test_id])[:-4] + '_flow_v.csv')
+            # np.savetxt(path_flow_vectors_u_text_file, flow[:,:,0], delimiter=',')
+            # np.savetxt(path_flow_vectors_v_text_file, flow[:,:,1], delimiter=',')
             save_vis_flow_to_image_file(flow, output_file)
 
         # also predict backward flow
