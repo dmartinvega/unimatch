@@ -1,4 +1,6 @@
+checkpoints_flow
 pretrained
+tmp
 .idea
 __pycache__
 output
