@@ -52,12 +52,8 @@ python main_flow.py \
 
 
 # things
-CHECKPOINT_DIR=checkpoints_flow/things-gmflow-scale1 && \
-mkdir -p ${CHECKPOINT_DIR} && \ # hacer este directorio y borrar esta linea
-python -m torch.distributed.launch --nproc_per_node=${NUM_GPUS} --master_port=9989 main_flow.py \
---launcher pytorch \
---checkpoint_dir ${CHECKPOINT_DIR} \ # quemar checkpoint dir
---resume checkpoints_flow/chairs-gmflow-scale1pwd/step_100000.pth \
+python main_flow.py --checkpoint_dir checkpoints_flow/things-gmflow-scale1 \
+--resume checkpoints_flow/chairs-gmflow-scale1/step_100000.pth \
 --stage things \
 --batch_size 8 \
 --val_dataset things sintel kitti \
@@ -68,5 +64,6 @@ python -m torch.distributed.launch --nproc_per_node=${NUM_GPUS} --master_port=99
 --with_speed_metric \
 --val_freq 40000 \
 --save_ckpt_freq 50000 \
---num_steps 800000 \
-2>&1 | tee -a ${CHECKPOINT_DIR}/train.log
+--num_steps 800000
+
+python main_flow.py --checkpoint_dir checkpoints_flow/things-gmflow-scale1 --resume checkpoints_flow/chairs-gmflow-scale1/step_100000.pth --stage things --batch_size 8 --val_dataset things sintel kitti --lr 2e-4 --image_size 384 768 --padding_factor 16 --upsample_factor 8 --with_speed_metric --val_freq 40000 --save_ckpt_freq 50000 --num_steps 800000
