@@ -212,139 +212,139 @@ def main(args):
     start_epoch = 0
     start_step = 0
     # resume checkpoints
-    if args.resume:
-        print('Load checkpoint: %s' % args.resume)
-
-        loc = 'cuda:{}'.format(args.local_rank) if torch.cuda.is_available() else 'cpu'
-        checkpoint = torch.load(args.resume, map_location=loc)
-
-        model_without_ddp.load_state_dict(checkpoint['model'], strict=args.strict_resume)
-
-        if 'optimizer' in checkpoint and 'step' in checkpoint and 'epoch' in checkpoint and not \
-                args.no_resume_optimizer:
-            print('Load optimizer')
-            optimizer.load_state_dict(checkpoint['optimizer'])
-            start_epoch = checkpoint['epoch']
-            start_step = checkpoint['step']
-
-        if print_info:
-            print('start_epoch: %d, start_step: %d' % (start_epoch, start_step))
-
-    # evaluate
-    if args.eval:
-        val_results = {}
-
-        if 'chairs' in args.val_dataset:
-            results_dict = validate_chairs(model_without_ddp,
-                                           with_speed_metric=args.with_speed_metric,
-                                           attn_type=args.attn_type,
-                                           attn_splits_list=args.attn_splits_list,
-                                           corr_radius_list=args.corr_radius_list,
-                                           prop_radius_list=args.prop_radius_list,
-                                           num_reg_refine=args.num_reg_refine,
-                                           )
-
-            val_results.update(results_dict)
-
-        if 'things' in args.val_dataset:
-            results_dict = validate_things(model_without_ddp,
-                                           padding_factor=args.padding_factor,
-                                           with_speed_metric=args.with_speed_metric,
-                                           attn_type=args.attn_type,
-                                           attn_splits_list=args.attn_splits_list,
-                                           corr_radius_list=args.corr_radius_list,
-                                           prop_radius_list=args.prop_radius_list,
-                                           num_reg_refine=args.num_reg_refine,
-                                           val_things_clean_only=args.val_things_clean_only,
-                                           )
-            val_results.update(results_dict)
-
-        if 'sintel' in args.val_dataset:
-            results_dict = validate_sintel(model_without_ddp,
-                                           count_time=args.count_time,
-                                           padding_factor=args.padding_factor,
-                                           with_speed_metric=args.with_speed_metric,
-                                           evaluate_matched_unmatched=args.evaluate_matched_unmatched,
-                                           attn_type=args.attn_type,
-                                           attn_splits_list=args.attn_splits_list,
-                                           corr_radius_list=args.corr_radius_list,
-                                           prop_radius_list=args.prop_radius_list,
-                                           num_reg_refine=args.num_reg_refine,
-                                           )
-            val_results.update(results_dict)
-
-        if 'kitti' in args.val_dataset:
-            results_dict = validate_kitti(model_without_ddp,
-                                          padding_factor=args.padding_factor,
-                                          with_speed_metric=args.with_speed_metric,
-                                          attn_type=args.attn_type,
-                                          attn_splits_list=args.attn_splits_list,
-                                          corr_radius_list=args.corr_radius_list,
-                                          prop_radius_list=args.prop_radius_list,
-                                          num_reg_refine=args.num_reg_refine,
-                                          debug=args.debug,
-                                          )
-            val_results.update(results_dict)
-
-        if args.save_eval_to_file:
-            misc.check_path(args.checkpoint_dir)
-            # save validation results
-            val_file = os.path.join(args.checkpoint_dir, 'val_results.txt')
-            with open(val_file, 'a') as f:
-                f.write('\neval results after training done\n\n')
-                metrics = ['chairs_epe', 'chairs_s0_10', 'chairs_s10_40', 'chairs_s40+',
-                           'things_clean_epe', 'things_clean_s0_10', 'things_clean_s10_40', 'things_clean_s40+',
-                           'things_final_epe', 'things_final_s0_10', 'things_final_s10_40', 'things_final_s40+',
-                           'sintel_clean_epe', 'sintel_clean_s0_10', 'sintel_clean_s10_40', 'sintel_clean_s40+',
-                           'sintel_final_epe', 'sintel_final_s0_10', 'sintel_final_s10_40', 'sintel_final_s40+',
-                           'kitti_epe', 'kitti_f1', 'kitti_s0_10', 'kitti_s10_40', 'kitti_s40+',
-                           ]
-                eval_metrics = [metric for metric in metrics if metric in val_results.keys()]
-                metrics_values = [val_results[metric] for metric in eval_metrics]
-
-                num_metrics = len(eval_metrics)
-
-                # save as markdown format
-                f.write(("| {:>20} " * num_metrics + '\n').format(*eval_metrics))
-                f.write(("| {:20.3f} " * num_metrics).format(*metrics_values))
-
-                f.write('\n\n')
-
-        return
-
-    # sintel and kitti submission
-    if args.submission:
-        # NOTE: args.val_dataset is a list
-        if args.val_dataset[0] == 'sintel':
-            create_sintel_submission(model_without_ddp,
-                                     output_path=args.output_path,
-                                     padding_factor=args.padding_factor,
-                                     save_vis_flow=args.save_vis_flow,
-                                     no_save_flo=args.no_save_flo,
-                                     attn_type=args.attn_type,
-                                     attn_splits_list=args.attn_splits_list,
-                                     corr_radius_list=args.corr_radius_list,
-                                     prop_radius_list=args.prop_radius_list,
-                                     num_reg_refine=args.num_reg_refine,
-                                     inference_size=args.inference_size,
-                                     )
-        elif args.val_dataset[0] == 'kitti':
-            create_kitti_submission(model_without_ddp,
-                                    output_path=args.output_path,
-                                    padding_factor=args.padding_factor,
-                                    save_vis_flow=args.save_vis_flow,
-                                    attn_type=args.attn_type,
-                                    attn_splits_list=args.attn_splits_list,
-                                    corr_radius_list=args.corr_radius_list,
-                                    prop_radius_list=args.prop_radius_list,
-                                    num_reg_refine=args.num_reg_refine,
-                                    inference_size=args.inference_size,
-                                    )
-
-        else:
-            raise ValueError(f'Not supported dataset for submission')
-
-        return
+    # if args.resume:
+    #     print('Load checkpoint: %s' % args.resume)
+    #
+    #     loc = 'cuda:{}'.format(args.local_rank) if torch.cuda.is_available() else 'cpu'
+    #     checkpoint = torch.load(args.resume, map_location=loc)
+    #
+    #     model_without_ddp.load_state_dict(checkpoint['model'], strict=args.strict_resume)
+    #
+    #     if 'optimizer' in checkpoint and 'step' in checkpoint and 'epoch' in checkpoint and not \
+    #             args.no_resume_optimizer:
+    #         print('Load optimizer')
+    #         optimizer.load_state_dict(checkpoint['optimizer'])
+    #         start_epoch = checkpoint['epoch']
+    #         start_step = checkpoint['step']
+    #
+    #     if print_info:
+    #         print('start_epoch: %d, start_step: %d' % (start_epoch, start_step))
+    #
+    # # evaluate
+    # if args.eval:
+    #     val_results = {}
+    #
+    #     if 'chairs' in args.val_dataset:
+    #         results_dict = validate_chairs(model_without_ddp,
+    #                                        with_speed_metric=args.with_speed_metric,
+    #                                        attn_type=args.attn_type,
+    #                                        attn_splits_list=args.attn_splits_list,
+    #                                        corr_radius_list=args.corr_radius_list,
+    #                                        prop_radius_list=args.prop_radius_list,
+    #                                        num_reg_refine=args.num_reg_refine,
+    #                                        )
+    #
+    #         val_results.update(results_dict)
+    #
+    #     if 'things' in args.val_dataset:
+    #         results_dict = validate_things(model_without_ddp,
+    #                                        padding_factor=args.padding_factor,
+    #                                        with_speed_metric=args.with_speed_metric,
+    #                                        attn_type=args.attn_type,
+    #                                        attn_splits_list=args.attn_splits_list,
+    #                                        corr_radius_list=args.corr_radius_list,
+    #                                        prop_radius_list=args.prop_radius_list,
+    #                                        num_reg_refine=args.num_reg_refine,
+    #                                        val_things_clean_only=args.val_things_clean_only,
+    #                                        )
+    #         val_results.update(results_dict)
+    #
+    #     if 'sintel' in args.val_dataset:
+    #         results_dict = validate_sintel(model_without_ddp,
+    #                                        count_time=args.count_time,
+    #                                        padding_factor=args.padding_factor,
+    #                                        with_speed_metric=args.with_speed_metric,
+    #                                        evaluate_matched_unmatched=args.evaluate_matched_unmatched,
+    #                                        attn_type=args.attn_type,
+    #                                        attn_splits_list=args.attn_splits_list,
+    #                                        corr_radius_list=args.corr_radius_list,
+    #                                        prop_radius_list=args.prop_radius_list,
+    #                                        num_reg_refine=args.num_reg_refine,
+    #                                        )
+    #         val_results.update(results_dict)
+    #
+    #     if 'kitti' in args.val_dataset:
+    #         results_dict = validate_kitti(model_without_ddp,
+    #                                       padding_factor=args.padding_factor,
+    #                                       with_speed_metric=args.with_speed_metric,
+    #                                       attn_type=args.attn_type,
+    #                                       attn_splits_list=args.attn_splits_list,
+    #                                       corr_radius_list=args.corr_radius_list,
+    #                                       prop_radius_list=args.prop_radius_list,
+    #                                       num_reg_refine=args.num_reg_refine,
+    #                                       debug=args.debug,
+    #                                       )
+    #         val_results.update(results_dict)
+    #
+    #     if args.save_eval_to_file:
+    #         misc.check_path(args.checkpoint_dir)
+    #         # save validation results
+    #         val_file = os.path.join(args.checkpoint_dir, 'val_results.txt')
+    #         with open(val_file, 'a') as f:
+    #             f.write('\neval results after training done\n\n')
+    #             metrics = ['chairs_epe', 'chairs_s0_10', 'chairs_s10_40', 'chairs_s40+',
+    #                        'things_clean_epe', 'things_clean_s0_10', 'things_clean_s10_40', 'things_clean_s40+',
+    #                        'things_final_epe', 'things_final_s0_10', 'things_final_s10_40', 'things_final_s40+',
+    #                        'sintel_clean_epe', 'sintel_clean_s0_10', 'sintel_clean_s10_40', 'sintel_clean_s40+',
+    #                        'sintel_final_epe', 'sintel_final_s0_10', 'sintel_final_s10_40', 'sintel_final_s40+',
+    #                        'kitti_epe', 'kitti_f1', 'kitti_s0_10', 'kitti_s10_40', 'kitti_s40+',
+    #                        ]
+    #             eval_metrics = [metric for metric in metrics if metric in val_results.keys()]
+    #             metrics_values = [val_results[metric] for metric in eval_metrics]
+    #
+    #             num_metrics = len(eval_metrics)
+    #
+    #             # save as markdown format
+    #             f.write(("| {:>20} " * num_metrics + '\n').format(*eval_metrics))
+    #             f.write(("| {:20.3f} " * num_metrics).format(*metrics_values))
+    #
+    #             f.write('\n\n')
+    #
+    #     return
+    #
+    # # sintel and kitti submission
+    # if args.submission:
+    #     # NOTE: args.val_dataset is a list
+    #     if args.val_dataset[0] == 'sintel':
+    #         create_sintel_submission(model_without_ddp,
+    #                                  output_path=args.output_path,
+    #                                  padding_factor=args.padding_factor,
+    #                                  save_vis_flow=args.save_vis_flow,
+    #                                  no_save_flo=args.no_save_flo,
+    #                                  attn_type=args.attn_type,
+    #                                  attn_splits_list=args.attn_splits_list,
+    #                                  corr_radius_list=args.corr_radius_list,
+    #                                  prop_radius_list=args.prop_radius_list,
+    #                                  num_reg_refine=args.num_reg_refine,
+    #                                  inference_size=args.inference_size,
+    #                                  )
+    #     elif args.val_dataset[0] == 'kitti':
+    #         create_kitti_submission(model_without_ddp,
+    #                                 output_path=args.output_path,
+    #                                 padding_factor=args.padding_factor,
+    #                                 save_vis_flow=args.save_vis_flow,
+    #                                 attn_type=args.attn_type,
+    #                                 attn_splits_list=args.attn_splits_list,
+    #                                 corr_radius_list=args.corr_radius_list,
+    #                                 prop_radius_list=args.prop_radius_list,
+    #                                 num_reg_refine=args.num_reg_refine,
+    #                                 inference_size=args.inference_size,
+    #                                 )
+    #
+    #     else:
+    #         raise ValueError(f'Not supported dataset for submission')
+    #
+    #     return
 
     # inferece on a dir or video
     if args.inference_dir is not None or args.inference_video is not None:

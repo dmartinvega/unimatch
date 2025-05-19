@@ -275,7 +275,7 @@ def flow_to_image(flow):
     return np.uint8(img)
 
 
-def save_vis_flow_tofile(flow, output_path):
+def save_vis_flow_to_image_file(flow, output_path):
     vis_flow = flow_to_image(flow)
     Image.fromarray(vis_flow).save(output_path)
 
