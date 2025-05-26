@@ -52,10 +52,10 @@ python main_flow.py \
 
 
 # things
-python main_flow.py --checkpoint_dir checkpoints_flow/things-gmflow-scale1 \
+/opt/miniconda3/envs/unimatch_2/bin/python main_flow.py --checkpoint_dir checkpoints_flow/things-gmflow-scale1 \
 --resume checkpoints_flow/chairs-gmflow-scale1/step_100000.pth \
 --stage things \
---batch_size 8 \
+--batch_size 4 \
 --val_dataset things sintel kitti \
 --lr 2e-4 \
 --image_size 384 768 \
